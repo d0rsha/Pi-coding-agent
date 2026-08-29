@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+secrets.yaml
+**/secrets.yaml
+SERVICE_ACCOUNT.JSON
+**/SERVICE_ACCOUNT.JSON
+*.pem
+*.key

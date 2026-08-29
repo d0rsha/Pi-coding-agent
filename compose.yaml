@@ -1,0 +1,38 @@
+services:
+  pi-ha-agent:
+    build:
+      context: .
+      args:
+        PI_PACKAGE: ${PI_PACKAGE:-@mariozechner/pi-coding-agent}
+    init: true
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=256m
+      - /home/agent/.cache:rw,nosuid,nodev,size=256m
+    volumes:
+      # Point HA_REPO at a separate checkout of the Home Assistant config repository.
+      - ${HA_REPO:?Set HA_REPO to a non-live Home Assistant repository checkout}:/workspace:rw
+      # Pi state/config is separate from the HA repository.
+      - pi-state:/home/agent/.pi:rw
+    environment:
+      HOME: /home/agent
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-Pi HA Agent}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-pi-ha-agent@localhost}
+      GIT_COMMITTER_NAME: ${GIT_COMMITTER_NAME:-Pi HA Agent}
+      GIT_COMMITTER_EMAIL: ${GIT_COMMITTER_EMAIL:-pi-ha-agent@localhost}
+      # Provider/API credentials should be injected at runtime, never committed.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+
+volumes:
+  pi-state:

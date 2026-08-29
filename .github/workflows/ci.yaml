@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  agent-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: |
+          bash -n scripts/entrypoint.sh
+          bash -n scripts/pi-ha-validate
+
+      - name: Validate Compose configuration
+        env:
+          HA_REPO: /tmp/ha-config-placeholder
+        run: docker compose config --quiet
+
+      - name: Build coding-agent image
+        run: docker build --tag pi-ha-agent:test .
+
+      - name: Smoke-test installed tools
+        run: |
+          docker run --rm --entrypoint sh pi-ha-agent:test -c 'command -v pi && command -v gh && command -v yamllint && command -v pi-ha-validate'
