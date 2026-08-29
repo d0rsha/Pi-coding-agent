@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "${1:-/workspace}"
+
+fail=0
+
+echo "==> Secret-file guard"
+if git ls-files | grep -Eq '(^|/)(secrets\.yaml|SERVICE_ACCOUNT\.JSON|\.env)$'; then
+  echo "ERROR: a sensitive runtime file is tracked by git." >&2
+  git ls-files | grep -E '(^|/)(secrets\.yaml|SERVICE_ACCOUNT\.JSON|\.env)$' >&2 || true
+  fail=1
+fi
+
+echo "==> Conflict markers"
+if git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' -- '*.yaml' '*.yml' '*.json' '*.py' '*.js' '*.ts' 2>/dev/null; then
+  echo "ERROR: merge-conflict markers found." >&2
+  fail=1
+fi
+
+echo "==> YAML lint"
+mapfile -t yaml_files < <(git ls-files '*.yaml' '*.yml')
+if ((${#yaml_files[@]})); then
+  # HA YAML contains custom tags such as !include and !secret. yamllint checks
+  # syntax/structure without trying to resolve those tags.
+  if ! yamllint -c "${PI_HA_YAMLLINT_CONFIG:-/opt/pi-ha/.yamllint}" "${yaml_files[@]}"; then
+    fail=1
+  fi
+else
+  echo "No tracked YAML files."
+fi
+
+echo "==> Git whitespace check"
+if ! git diff --check; then
+  fail=1
+fi
+
+echo "==> Working tree"
+git status --short
+
+if ((fail)); then
+  echo "Validation FAILED." >&2
+  exit 1
+fi
+
+echo "Validation passed. Full Home Assistant config validation may still be required in CI."
