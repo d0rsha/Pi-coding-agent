@@ -4,7 +4,7 @@ ARG PI_PACKAGE=@mariozechner/pi-coding-agent
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       bash ca-certificates curl git jq openssh-client python3 python3-pip python3-venv \
+       bash ca-certificates curl gh git jq openssh-client python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/* \
     && npm install -g "${PI_PACKAGE}"
 
