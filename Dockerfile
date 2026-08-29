@@ -11,15 +11,16 @@ RUN apt-get update \
 RUN python3 -m venv /opt/ha-tools \
     && /opt/ha-tools/bin/pip install --no-cache-dir yamllint
 
-ENV PATH="/opt/ha-tools/bin:${PATH}" \
+ENV PATH="/opt/ha-tools/bin:/opt/pi-ha/scripts:${PATH}" \
     HOME=/home/agent
 
 RUN useradd --create-home --uid 10001 --shell /bin/bash agent \
-    && mkdir -p /workspace /home/agent/.pi \
-    && chown -R agent:agent /workspace /home/agent
+    && mkdir -p /workspace /home/agent/.pi /opt/pi-ha \
+    && chown -R agent:agent /workspace /home/agent /opt/pi-ha
 
+COPY --chown=agent:agent .yamllint /opt/pi-ha/.yamllint
 COPY --chown=agent:agent scripts/ /opt/pi-ha/scripts/
-RUN chmod +x /opt/pi-ha/scripts/*.sh
+RUN chmod +x /opt/pi-ha/scripts/*
 
 USER agent
 WORKDIR /workspace
